@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "compile-llvm",
+            "type": "shell",
+            "command": "clang",
+            "args": [
+                "-g", "-emit-llvm", "-S", "-fno-discard-value-names", "-Xclang", "-disable-O0-optnone", "-c", "-o", "${fileDirname}/${fileBasenameNoExtension}.ll", "${file}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

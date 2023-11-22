@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug LLVM Pass",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/usr/bin/opt",
+            "args": [
+                "-load", "${workspaceFolder}/build/DivZeroPass.so",
+                "-DivZero", "${fileDirname}/${fileBasenameNoExtension}.ll",
+                "-disable-output"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "compile-llvm"
+        }
+    ]
+}
