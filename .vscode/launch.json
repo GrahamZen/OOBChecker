@@ -16,33 +16,25 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb",
-            "preLaunchTask": "compile-llvm"
+            "preLaunchTask": "compile-llvm",
         }
     ],
     "inputs": [
         {
             "id": "testFileName",
             "type": "command",
-            "command": "extension.commandvariable.remember",
+            "command": "extension.commandvariable.transform",
             "args": {
-                "key": "testFileName",
-                "value": "${input:pickTest}",
-                // remove extension from file name
-                "transform": {
-                    "find": "\\.c$",
-                    "replace": ""
+                "text": "${pickFile:file}",
+                "find": "\\.c$",
+                "replace": "",
+                "pickFile": {
+                    "file": {
+                        "include": "test/*.c",
+                        "prompt": "Pick a test file to run the pass on",
+                    }
                 }
             }
         },
-        {
-            "id": "pickTest",
-            "type": "command",
-            "command": "extension.commandvariable.file.pickFile",
-            "args": {
-                "include": "test/*.c",
-                "keyRemember": "testFileName",
-                "prompt": "Pick a test file to run the pass on",
-            }
-        }
     ]
 }
