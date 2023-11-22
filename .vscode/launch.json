@@ -2,13 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug LLVM Pass",
+            "name": "Run LLVM Pass",
             "type": "cppdbg",
             "request": "launch",
             "program": "/usr/bin/opt",
             "args": [
                 "-load", "${workspaceFolder}/build/DivZeroPass.so",
-                "-DivZero", "${fileDirname}/${fileBasenameNoExtension}.ll",
+                "-DivZero", "${input:testFileName}.ll",
                 "-disable-output"
             ],
             "stopAtEntry": false,
@@ -17,6 +17,32 @@
             "externalConsole": false,
             "MIMode": "lldb",
             "preLaunchTask": "compile-llvm"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testFileName",
+            "type": "command",
+            "command": "extension.commandvariable.remember",
+            "args": {
+                "key": "testFileName",
+                "value": "${input:pickTest}",
+                // remove extension from file name
+                "transform": {
+                    "find": "\\.c$",
+                    "replace": ""
+                }
+            }
+        },
+        {
+            "id": "pickTest",
+            "type": "command",
+            "command": "extension.commandvariable.file.pickFile",
+            "args": {
+                "include": "test/*.c",
+                "keyRemember": "testFileName",
+                "prompt": "Pick a test file to run the pass on",
+            }
         }
     ]
 }

@@ -2,15 +2,41 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "test",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "${file}",
+            ],
+        },
+        {
             "label": "compile-llvm",
             "type": "shell",
             "command": "clang",
             "args": [
-                "-g", "-emit-llvm", "-S", "-fno-discard-value-names", "-Xclang", "-disable-O0-optnone", "-c", "-o", "${fileDirname}/${fileBasenameNoExtension}.ll", "${file}"
+                "-g", "-emit-llvm", "-S", "-fno-discard-value-names", "-Xclang", "-disable-O0-optnone", "-c", "-o", 
+                "${input:testFileName}.ll",
+                "${input:testFileName}.c"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
+            }
+        },
+    ],
+    "inputs": [
+        {
+            "id": "testFileName",
+            "type": "command",
+            "command": "extension.commandvariable.remember",
+            "args": {
+                "key": "testFileName",
+                "value": "${input:pickTest}",
+                // remove extension from file name
+                "transform": {
+                    "find": "\\.c$",
+                    "replace": ""
+                }
             }
         }
     ]

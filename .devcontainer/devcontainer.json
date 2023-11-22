@@ -39,7 +39,9 @@
 		"ms-python.vscode-pylance",
 		"ms-python.python",
 		"usernamehw.errorlens",
-		"ms-vsliveshare.vsliveshare"
+		"ms-vsliveshare.vsliveshare",
+		"rioj7.command-variable",
+		"GitHub.copilot"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
