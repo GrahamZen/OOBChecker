@@ -15,8 +15,8 @@
             "command": "clang",
             "args": [
                 "-g", "-emit-llvm", "-S", "-fno-discard-value-names", "-Xclang", "-disable-O0-optnone", "-c", "-o", 
-                "${input:testFileName}.ll",
-                "${input:testFileName}.c"
+                "${input:getTestFileName}.ll",
+                "${input:getTestFileName}.c"
             ],
             "group": {
                 "kind": "build",
@@ -26,17 +26,12 @@
     ],
     "inputs": [
         {
-            "id": "testFileName",
+            "id": "getTestFileName",
             "type": "command",
             "command": "extension.commandvariable.remember",
             "args": {
                 "key": "testFileName",
-                "value": "${input:pickTest}",
-                // remove extension from file name
-                "transform": {
-                    "find": "\\.c$",
-                    "replace": ""
-                }
+                "transform" : {}
             }
         }
     ]

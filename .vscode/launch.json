@@ -31,9 +31,10 @@
                 "pickFile": {
                     "file": {
                         "include": "test/*.c",
-                        "prompt": "Pick a test file to run the pass on",
+                        "prompt": "Pick a test file to run the pass on"
                     }
-                }
+                },
+                "key": "testFileName"
             }
         },
     ]
