@@ -14,7 +14,7 @@
             "type": "shell",
             "command": "clang",
             "args": [
-                "-g", "-emit-llvm", "-S", "-fno-discard-value-names", "-Xclang", "-disable-O0-optnone", "-c", "-o", 
+                "-emit-llvm", "-S", "-fno-discard-value-names", "-Xclang", "-disable-O0-optnone", "-c", "-o", 
                 "${input:getTestFileName}.ll",
                 "${input:getTestFileName}.c"
             ],
