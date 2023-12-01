@@ -5,7 +5,7 @@
 #include "llvm/IR/Instructions.h"
 
 namespace dataflow {
-
+using namespace llvm;
 void PointerAnalysis::transfer(Instruction *Inst, PointsToInfo &PointsTo) {
   if (AllocaInst *Alloca = dyn_cast<AllocaInst>(Inst)) {
     std::string Pointer = variable(Alloca);

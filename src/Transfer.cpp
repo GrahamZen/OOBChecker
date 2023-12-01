@@ -1,23 +1,18 @@
-#include "DivZeroAnalysis.h"
+#include "OOBCheckerPass.h"
 #include "Utils.h"
 
-namespace dataflow
-{
-
+namespace dataflow {
   /**
    * @brief Is the given instruction a user input?
    *
-   * @param Inst The instruction to check.
+   * @param ins The instruction to check.
    * @return true If it is a user input, false otherwise.
    */
-  bool isInput(Instruction *Inst)
-  {
-    if (auto Call = dyn_cast<CallInst>(Inst))
-    {
-      if (auto Fun = Call->getCalledFunction())
-      {
-        return (Fun->getName().equals("getchar") ||
-                Fun->getName().equals("fgetc"));
+  bool isInput(const llvm::Instruction *ins) {
+    if (auto call = llvm::dyn_cast<llvm::CallInst>(ins)) {
+      if (auto func = call->getCalledFunction()) {
+        return (func->getName().equals("getchar") ||
+                func->getName().equals("fgetc"));
       }
     }
     return false;
@@ -26,236 +21,170 @@ namespace dataflow
   /**
    * Evaluate a PHINode to get its Domain.
    *
-   * @param Phi PHINode to evaluate
-   * @param InMem InMemory of Phi
+   * @param phi PHINode to evaluate
+   * @param inMap input facts
    * @return Domain of Phi
    */
-  Domain *eval(PHINode *Phi, const Memory *InMem)
-  {
-    if (auto ConstantVal = Phi->hasConstantValue())
-    {
-      return new Domain(extractFromValue(ConstantVal));
+  IntervalDomain eval(const llvm::PHINode *phi, const FactMap &inMap) {
+    if (auto ConstantVal = phi->hasConstantValue()) {
+      return IntervalDomain { ConstantVal };
     }
 
-    Domain *Joined = new Domain(Domain::Uninit);
-
-    for (unsigned int i = 0; i < Phi->getNumIncomingValues(); i++)
-    {
-      auto Dom = getOrExtract(InMem, Phi->getIncomingValue(i));
-      Joined = Domain::join(Joined, Dom);
+    IntervalDomain ret;
+    for (unsigned int i = 0; i < phi->getNumIncomingValues(); ++i) {
+      ret |= getOrExtract(inMap, phi->getIncomingValue(i));
     }
-    return Joined;
+    return ret;
   }
 
   /**
    * @brief Evaluate the +, -, * and / BinaryOperator instructions
    * using the Domain of its operands and return the Domain of the result.
    *
-   * @param BinOp BinaryOperator to evaluate
-   * @param InMem InMemory of BinOp
-   * @return Domain of BinOp
+   * @param binOp the binary operator to evaluate
+   * @param inMap input facts
+   * @return Domain of binary operator
    */
-  Domain *eval(BinaryOperator *BinOp, const Memory *InMem)
-  {
-    /**
-     * DONE: Write your code here that evaluates +, -, * and /
-     * based on the Domains of the operands.
-     */
-    const auto left = BinOp->getOperand(0);
-    const auto right = BinOp->getOperand(1);
-    switch (BinOp->getOpcode())
+  IntervalDomain eval(const llvm::BinaryOperator *binOp, const FactMap &inMap) {
+    const auto left = getOrExtract(inMap, binOp->getOperand(0));
+    const auto right = getOrExtract(inMap, binOp->getOperand(1));
+    switch (binOp->getOpcode())
     {
-    case Instruction::Add:
-      return Domain::add(getOrExtract(InMem, left), getOrExtract(InMem, right));
-    case Instruction::Sub:
-      return Domain::sub(getOrExtract(InMem, left), getOrExtract(InMem, right));
-    case Instruction::Mul:
-      return Domain::mul(getOrExtract(InMem, left), getOrExtract(InMem, right));
-    case Instruction::SDiv:
-    case Instruction::UDiv:
-      return Domain::div(getOrExtract(InMem, left), getOrExtract(InMem, right));
+    case llvm::Instruction::Add:
+      return left + right;
+    case llvm::Instruction::Sub:
+      return left - right;
+    case llvm::Instruction::Mul:
+      return left * right;
+    case llvm::Instruction::SDiv:
+    case llvm::Instruction::UDiv:
+      return left / right;
     default:
-      return new Domain(Domain::Uninit);
+      return IntervalDomain::UNINIT();
     }
   }
 
   /**
    * @brief Evaluate Cast instructions.
    *
-   * @param Cast Cast instruction to evaluate
-   * @param InMem InMemory of Instruction
+   * @param cast Cast instruction to evaluate
+   * @param inMap InMemory of Instruction
    * @return Domain of Cast
    */
-  Domain *eval(CastInst *Cast, const Memory *InMem)
-  {
-    /**
-     * DONE: Write your code here to evaluate Cast instruction.
-     */
-    return getOrExtract(InMem, Cast->getOperand(0));
+  IntervalDomain eval(const llvm::CastInst *cast, const FactMap &inMap) {
+    return getOrExtract(inMap, cast->getOperand(0));
   }
 
   /**
    * @brief Evaluate the ==, !=, <, <=, >=, and > Comparision operators using
    * the Domain of its operands to compute the Domain of the result.
    *
-   * @param Cmp Comparision instruction to evaluate
-   * @param InMem InMemory of Cmp
+   * @param cmp Comparision instruction to evaluate
+   * @param inMap InMemory of Cmp
    * @return Domain of Cmp
    */
-  Domain *eval(CmpInst *Cmp, const Memory *InMem)
-  {
-    /**
-     * DONE: Write your code here that evaluates:
-     * ==, !=, <, <=, >=, and > based on the Domains of the operands.
-     *
-     * NOTE: There is a lot of scope for refining this, but you can just return
-     * MaybeZero for comparisons other than equality.
-     */
-    auto left = getOrExtract(InMem, Cmp->getOperand(0));
-    auto right = getOrExtract(InMem, Cmp->getOperand(1));
-    if (left->Value == Domain::Uninit || right->Value == Domain::Uninit)
-      return new Domain(Domain::Uninit);
-    switch (Cmp->getPredicate())
+  IntervalDomain eval(const llvm::CmpInst *cmp, const FactMap &inMap) {
+    auto left = getOrExtract(inMap, cmp->getOperand(0));
+    auto right = getOrExtract(inMap, cmp->getOperand(1));
+
+    switch (cmp->getPredicate())
     {
-    case CmpInst::FCMP_OEQ:
-    case CmpInst::ICMP_EQ:
-      if (Domain::equal(*left, *right) && left->Value == Domain::Zero)
-        return new Domain(Domain::NonZero);
-      else if (Domain::sub(left, right)->Value == Domain::NonZero || Domain::sub(right, left)->Value == Domain::NonZero)
-        return new Domain(Domain::Zero);
-      else
-        return new Domain(Domain::MaybeZero);
-    case CmpInst::FCMP_ONE:
-    case CmpInst::ICMP_NE:
-      if (Domain::equal(*left, *right) && (left->Value == Domain::Zero))
-        return new Domain(Domain::Zero);
-      else if (Domain::sub(left, right)->Value == Domain::NonZero || Domain::sub(right, left)->Value == Domain::NonZero)
-        return new Domain(Domain::NonZero);
-      else
-        return new Domain(Domain::MaybeZero);
-    case CmpInst::ICMP_SLT:
-    case CmpInst::ICMP_SLE:
-    case CmpInst::ICMP_SGE:
-    case CmpInst::ICMP_SGT:
-      return new Domain{Domain::MaybeZero};
+    case llvm::CmpInst::FCMP_OEQ:
+    case llvm::CmpInst::ICMP_EQ:
+      if(left.isUnknown()) {
+        return right;
+      } else if(right.isUnknown()) {
+        return left;
+      }
+      return left & right;
+    case llvm::CmpInst::FCMP_ONE:
+    case llvm::CmpInst::ICMP_NE:
+    case llvm::CmpInst::ICMP_SLT:
+    case llvm::CmpInst::ICMP_SLE:
+    case llvm::CmpInst::ICMP_SGE:
+    case llvm::CmpInst::ICMP_SGT:
     default:
-      return new Domain(Domain::Uninit);
+      // TODO: can be improved
+      return left | right;
     }
   }
 
-  void DivZeroAnalysis::transfer(Instruction *Inst, const Memory *In,
-                                 Memory &NOut, PointerAnalysis *PA,
-                                 SetVector<Value *> PointerSet)
-  {
-    if (isInput(Inst))
-    {
-      // The instruction is a user controlled input, it can have any value.
-      NOut[variable(Inst)] = new Domain(Domain::MaybeZero);
-    }
-    else if (auto Phi = dyn_cast<PHINode>(Inst))
-    {
-      // Evaluate PHI node
-      NOut[variable(Phi)] = eval(Phi, In);
-    }
-    else if (auto BinOp = dyn_cast<BinaryOperator>(Inst))
-    {
-      // Evaluate BinaryOperator
-      NOut[variable(BinOp)] = eval(BinOp, In);
-    }
-    else if (auto Cast = dyn_cast<CastInst>(Inst))
-    {
-      // Evaluate Cast instruction
-      NOut[variable(Cast)] = eval(Cast, In);
-    }
-    else if (auto Cmp = dyn_cast<CmpInst>(Inst))
-    {
-      // Evaluate Comparision instruction
-      NOut[variable(Cmp)] = eval(Cmp, In);
-    }
-    else if (auto Alloca = dyn_cast<AllocaInst>(Inst))
-    {
-      // Do nothing here.
-    }
-    else if (auto Store = dyn_cast<StoreInst>(Inst))
-    {
-      /**
-       * TODO: Store instruction can either add new variables or overwrite existing variables into memory maps.
-       * To update the memory map, we rely on the points-to graph constructed in PointerAnalysis.
-       *
-       * To build the abstract memory map, you need to ensure all pointer references are in-sync, and
-       * will converge upon a precise abstract value. To achieve this, implement the following workflow:
-       *
-       * Iterate through the provided PointerSet:
-       *   - If there is a may-alias (i.e., `alias()` returns true) between two variables:
-       *     + Get the abstract values of each variable.
-       *     + Join the abstract values using Domain::join().
-       *     + Update the memory map for the current assignment with the joined abstract value.
-       *     + Update the memory map for all may-alias assignments with the joined abstract value.
-       *
-       * Hint: You may find getOperand(), getValueOperand(), and getPointerOperand() useful.
-       */
-      const auto curr_pointer = Store->getPointerOperand();
-      const auto curr_value = Store->getValueOperand();
-      if (curr_value->getType()->isPointerTy())
-        return;
-      const auto curr_valueDomain = getOrExtract(In, curr_value);
-      std::string curr_pointer_str = variable(curr_pointer);
-      for (auto pointer : PointerSet)
-      {
-        std::string pointer_str = variable(pointer);
-        if (PA->alias(curr_pointer_str, pointer_str))
-        {
-          if (In->count(pointer_str) != 0)
-            NOut[pointer_str] = Domain::join(getOrExtract(In, pointer), curr_valueDomain);
-          else
-            NOut[pointer_str] = curr_valueDomain;
+  FactMap OOBCheckerPass::genSet(const llvm::Instruction *ins, const AnalysisContext& context) {
+    FactMap ret;
+    const auto& inFacts = context.in.at(ins);
+    if (isInput(ins)) {
+      ret[variable(ins)] = IntervalDomain::UNINIT();
+    } else if (auto phi = llvm::dyn_cast<llvm::PHINode>(ins)) {
+      ret[variable(phi)] = eval(phi, inFacts);
+    } else if (auto binOp = llvm::dyn_cast<llvm::BinaryOperator>(ins)) {
+      ret[variable(binOp)] = eval(binOp, inFacts);
+    } else if (auto cast = llvm::dyn_cast<llvm::CastInst>(ins)) {
+      ret[variable(cast)] = eval(cast, inFacts);
+    } else if (auto cmp = llvm::dyn_cast<llvm::CmpInst>(ins)) {
+      ret[variable(cmp)] = eval(cmp, inFacts);
+    } else if (auto alloca = llvm::dyn_cast<llvm::AllocaInst>(ins)) {
+      //TODO
+    } else if (auto store = llvm::dyn_cast<llvm::StoreInst>(ins)) {
+      // *pointer_op = value_op
+      const auto toStore = store->getPointerOperand();
+      const auto val = store->getValueOperand();
+      if (val->getType()->isPointerTy())
+        return ret;
+      const auto valDomain = getOrExtract(inFacts, val);
+      std::string toStoreStr = variable(toStore);
+      for (auto ptr : context.pointerSet) {
+        std::string ptrStr = variable(ptr);
+        if (context.pa.alias(toStoreStr, ptrStr)) {
+          if (inFacts.count(ptrStr)) {
+            ret[ptrStr] = getOrExtract(inFacts, ptr) | valDomain;
+          } else {
+            ret[ptrStr] = valDomain;
+          }
         }
       }
-      NOut[curr_pointer_str] = curr_valueDomain;
-    }
-    else if (auto Load = dyn_cast<LoadInst>(Inst))
-    {
-      /**
-       * TODO: Rely on the existing variables defined within the `In` memory to
-       * know what abstract domain should be for the new variable
-       * introduced by a load instruction.
-       *
-       * If the memory map already contains the variable, propagate the existing
-       * abstract value to NOut.
-       * Otherwise, initialize the memory map for it.
-       *
-       * Hint: You may use getPointerOperand().
-       */
-      auto pointer = Load->getPointerOperand();
-      if (Load->getType()->isIntegerTy())
-      {
-        NOut[variable(Load)] = getOrExtract(In, pointer);
+      ret[toStoreStr] = valDomain;
+    } else if (auto load = llvm::dyn_cast<llvm::LoadInst>(ins)) {
+      auto pointer = load->getPointerOperand();
+      if (load->getType()->isIntegerTy()) {
+        ret[variable(load)] = getOrExtract(inFacts, pointer);
       }
-    }
-    else if (auto Branch = dyn_cast<BranchInst>(Inst))
-    {
+    } else if (auto branch = llvm::dyn_cast<llvm::BranchInst>(ins)) {
       // Analysis is flow-insensitive, so do nothing here.
-    }
-    else if (auto Call = dyn_cast<CallInst>(Inst))
-    {
-      /**
-       * TODO: Populate the NOut with an appropriate abstract domain.
-       *
-       * You only need to consider calls with int return type.
-       */
-      if (Call->getType()->isIntegerTy())
-      {
-        NOut[variable(Call)] = getOrExtract(In, Call);
+    } else if (auto call = llvm::dyn_cast<llvm::CallInst>(ins)) {
+      if (call->getType()->isIntegerTy()) {
+        ret[variable(call)] = getOrExtract(inFacts, call);
       }
-    }
-    else if (auto Return = dyn_cast<ReturnInst>(Inst))
-    {
+    } else if (auto retIns = llvm::dyn_cast<llvm::ReturnInst>(ins)) {
       // Analysis is intra-procedural, so do nothing here.
+    } else {
+      llvm::errs() << "Unhandled instruction: " << *ins<< "\n";
     }
-    else
-    {
-      errs() << "Unhandled instruction: " << *Inst << "\n";
+
+    return ret;
+  }
+
+  std::unordered_set<std::string> OOBCheckerPass::killSet(const llvm::Instruction *ins, const AnalysisContext& context) {
+    std::unordered_set<std::string> ret;
+    const auto& inFacts = context.in.at(ins);
+
+    if (auto store = llvm::dyn_cast<llvm::StoreInst>(ins)) {
+      // *pointer_op = value_op
+      const auto toStore = store->getPointerOperand();
+      const auto val = store->getValueOperand();
+      if (val->getType()->isPointerTy())
+        return ret;
+      const auto valDomain = getOrExtract(inFacts, val);
+      std::string toStoreStr = variable(toStore);
+      for (auto ptr : context.pointerSet) {
+        std::string ptrStr = variable(ptr);
+        if (context.pa.alias(toStoreStr, ptrStr)) {
+          ret.insert(ptrStr);
+        }
+      }
+      ret.insert(toStoreStr);
     }
+
+    return ret;
   }
 
 } // namespace dataflow

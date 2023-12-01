@@ -7,9 +7,11 @@
             "request": "launch",
             "program": "/usr/bin/opt",
             "args": [
-                "-load", "${workspaceFolder}/build/DivZeroPass.so",
-                "-DivZero", "${input:testFileName}.ll",
-                "-disable-output"
+                "-load", "${workspaceFolder}/build/OOBChecker.so",
+                "-OOBChecker", "${input:testFileName}.ll",
+                "-disable-output",
+                ">",
+                "${workspaceFolder}/test/${input:testFileName}.out"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

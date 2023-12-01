@@ -4,8 +4,6 @@
 #include "llvm/IR/Function.h"
 #include <set>
 
-using namespace llvm;
-
 namespace dataflow {
 
 //===----------------------------------------------------------------------===//
@@ -29,7 +27,7 @@ public:
    *
    * @param F The function for which pointer analysis is done
    */
-  PointerAnalysis(Function &F);
+  PointerAnalysis(llvm::Function &F);
 
   /**
    * @brief If the instruction is memory allocation, store, or load, updates the points-to sets.
@@ -37,7 +35,7 @@ public:
    * @param Inst The instruction to be analyzed for aliasing
    * @param PointsTo The set of 
    */
-  void transfer(Instruction *Inst, PointsToInfo &PointsTo);
+  void transfer(llvm::Instruction *Inst, PointsToInfo &PointsTo);
 
   /**
    * @brief Returns true if two pointers are aliased

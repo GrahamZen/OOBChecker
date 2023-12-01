@@ -1,94 +1,57 @@
 #include "Utils.h"
-#include "DivZeroAnalysis.h"
 #include "Domain.h"
 
 const char *WHITESPACES = " \t\n\r";
 const size_t VARIABLE_PADDED_LEN = 8;
 
-template <typename V, typename K, class Map, class DefaultConstructor>
-V getOrDefault(const Map *M, const K &Key, DefaultConstructor Default) {
-  const auto It = M->find(Key);
-  if (It == M->end())
-    return Default();
-
-  return It->second;
-}
-
 namespace dataflow {
 
-std::string variable(const Value *Val) {
-  std::string Code;
-  raw_string_ostream SS(Code);
-  Val->print(SS);
-  Code.erase(0, Code.find_first_not_of(WHITESPACES));
-  auto RetVal = Code.substr(0, Code.find_first_of(WHITESPACES));
-  if (RetVal == "ret" || RetVal == "br" || RetVal == "store") {
-    return Code;
+std::string variable(const llvm::Value *val) {
+  std::string code;
+  llvm::raw_string_ostream ss(code);
+  val->print(ss);
+  code.erase(0, code.find_first_not_of(WHITESPACES));
+  auto ret = code.substr(0, code.find_first_of(WHITESPACES));
+  if (ret == "ret" || ret == "br" || ret == "store") {
+    return code;
   }
-  if (RetVal == "i1" || RetVal == "i8" || RetVal == "i32" || RetVal == "i64") {
-    RetVal = Code;
+  if (ret == "i1" || ret == "i8" || ret == "i32" || ret == "i64") {
+    ret = code;
   }
-  for (auto i = RetVal.size(); i < VARIABLE_PADDED_LEN; i++) {
-    RetVal += " ";
+  for (auto i = ret.size(); i < VARIABLE_PADDED_LEN; i++) {
+    ret += " ";
   }
-  return RetVal;
+  return ret;
 }
 
-std::string address(const Value *Val) {
-  std::string Code;
-  raw_string_ostream SS(Code);
-  Val->print(SS);
-  Code.erase(0, Code.find_first_not_of(WHITESPACES));
-  Code = "@(" + Code + ")";
-  return Code;
+std::string address(const llvm::Value *val) {
+  std::string code;
+  llvm::raw_string_ostream ss(code);
+  val->print(ss);
+  code.erase(0, code.find_first_not_of(WHITESPACES));
+  code = "@(" + code + ")";
+  return code;
 }
 
-Domain::Element extractFromValue(const Value *Val) {
-  if (dyn_cast<UndefValue>(Val)) {
-    return Domain::MaybeZero;
-  } else if (auto ConstVal = dyn_cast<ConstantData>(Val)) {
-    return (ConstVal->isZeroValue() ? Domain::Zero : Domain::NonZero);
-  }
-  return Domain::Uninit;
-}
-
-Domain *getOrExtract(const Memory *Mem, const Value *Val) {
-  return getOrDefault<Domain *>(Mem, variable(Val), [&V = Val] {
-    return new Domain(extractFromValue(V));
-  });
-}
-
-void printMemory(const Memory *Mem) {
-  for (auto Iter = Mem->begin(), End = Mem->end(); Iter != End; ++Iter) {
-    errs() << "    [ " << Iter->first << " |-> " << *Iter->second << " ]\n";
-  }
-  if (Mem->empty()) {
-    errs() << "\n";
+IntervalDomain getOrDefault(const FactMap& facts, const llvm::Value *val) {
+  auto key = variable(val);
+  if (facts.count(key)) {
+    return facts.at(key);
+  } else {
+    return IntervalDomain { val };
   }
 }
 
-void printInstructionTransfer(Instruction *Inst, const Memory *InMem,
-                              const Memory *OutMem) {
-  auto InState = getOrExtract(InMem, Inst);
-  auto OutState = getOrExtract(OutMem, Inst);
-
-  errs() << variable(Inst) << ":\t[ " << *InState << " --> " << *OutState
-         << " ]\n";
-}
-
-void printMap(Function &F, ValueMap<Instruction *, Memory *> &InMap,
-              ValueMap<Instruction *, Memory *> &OutMap) {
-  errs() << "Dataflow Analysis Results:\n";
-  for (inst_iterator Iter = inst_begin(F), E = inst_end(F); Iter != E; ++Iter) {
-    auto Inst = &(*Iter);
-    errs() << "Instruction: " << *Inst << "\n";
-    errs() << "In set: \n";
-    auto InMem = InMap[Inst];
-    printMemory(InMem);
-    errs() << "Out set: \n";
-    auto OutMem = OutMap[Inst];
-    printMemory(OutMem);
-    errs() << "\n";
+void printMap(const llvm::Function &func, const InsFactMap &inMap, const InsFactMap &outMap) {
+  llvm::outs() << "Dataflow Analysis Results:\n";
+  for (auto iter = llvm::inst_begin(func), end = llvm::inst_end(func); iter != end; ++iter) {
+    auto ins = &(*iter);
+    llvm::outs() << "Instruction: " << *ins << "\n";
+    llvm::outs() << "In set: \n";
+    llvm::outs() << inMap.at(ins) << "\n";
+    llvm::outs() << "Out set: \n";
+    llvm::outs() << outMap.at(ins) << "\n";
+    llvm::outs() << "\n";
   }
 }
 

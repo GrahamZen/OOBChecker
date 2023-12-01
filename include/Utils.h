@@ -1,59 +1,41 @@
-#ifndef UTILS_H
-#define UTILS_H
+#pragma once
 
-#include "DivZeroAnalysis.h"
-
+#include "Domain.h"
+#include <unordered_map>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/InstIterator.h>
 extern const char *WHITESPACES;
 
 namespace dataflow {
 
+using FactMap = std::unordered_map<std::string, IntervalDomain>;
+using InsFactMap = std::unordered_map<const llvm::Instruction*, FactMap>;
+
 /**
  * @brief Get a human-readable string name for an llvm Value
  *
- * @param Val The llvm Value to get the string representation of
+ * @param val The llvm Value to get the string representation of
  * @return std::string The string representation of Val.
  */
-std::string variable(const Value *Val);
+std::string variable(const llvm::Value *val);
 
 /**
  * @brief Encode the memory address of an llvm Value
  *
- * @param Val The llvm Value to get the encoding of
+ * @param val The llvm Value to get the encoding of
  * @return std::string The encoded memory address of Val
  */
-std::string address(const Value *Val);
-
-/**
- * @brief Try to extract the Domain of a value.
- *
- * When Val is a ConstantInt, we can extract its Domain.
- *
- * @param Val Value to extract the Domain for.
- * @return Domain::Element Domain of Val, or Domain::Uninit if
- *  Val is not a ConstantInt.
- */
-Domain::Element extractFromValue(const Value *Val);
+std::string address(const llvm::Value *val);
 
 /**
  * @brief Get the Domain of Val from Memory Or try Extracting it.
  *
- * @param Mem Memory containing the domain of Val.
- * @param Val Value whose domain is to be extracted from Mem.
- * @return Domain* Domain of Val in Mem
+ * @param map The domain of val.
+ * @param val Value whose domain is to be extracted from mem.
+ * @return Domain Domain of val in mem
  */
-Domain *getOrExtract(const Memory *Mem, const Value *Val);
-
-/**
- * @brief Print the Memorm Mem in a human readable format to stderr.
- *
- * Format:
- *   [ <variable1> |-> <domain1> ]
- *   [ <variable2> |-> <domain2> ]
- *  ...
- *
- * @param Mem Memory to print
- */
-void printMemory(const Memory *Mem);
+IntervalDomain getOrExtract(const FactMap& map, const llvm::Value *val);
 
 /**
  * @brief Print the Before and After domains of an instruction
@@ -62,12 +44,12 @@ void printMemory(const Memory *Mem);
  * Format:
  *   <instruction>:    [ <before> --> <after> ]
  *
- * @param Inst The instruction to print the domains for.
- * @param InMem The incoming memory.
- * @param OutMem The outgoing memory.
+ * @param ins The instruction to print the domains for.
+ * @param inMap The incoming domains.
+ * @param outMap The outgoing domains.
  */
-void printInstructionTransfer(Instruction *Inst, const Memory *InMem,
-                              const Memory *OutMem);
+void printInstructionTransfer(const llvm::Instruction *ins, const FactMap& inMap,
+                              const FactMap& outMap);
 
 /**
  * @brief Print the In and Out memory of every instruction in function F to
@@ -76,13 +58,24 @@ void printInstructionTransfer(Instruction *Inst, const Memory *InMem,
  * This gives the human-readable representaion of the results of dataflow
  * analysis.
  *
- * @param F Function whose dataflow analysis result to print.
- * @param InMap Map of In memory of every instruction in function F.
- * @param OutMap Map of Out memory of every instruction in function F.
+ * @param func Function whose dataflow analysis result to print.
+ * @param inMap Map of In memory of every instruction in function F.
+ * @param outMap Map of Out memory of every instruction in function F.
  */
-void printMap(Function &F, ValueMap<Instruction *, Memory *> &InMap,
-              ValueMap<Instruction *, Memory *> &OutMap);
+void printMap(const llvm::Function &func, const InsFactMap &inMap, const InsFactMap &outMap);
+
+inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const FactMap &factMap) {
+  for (auto &fact : factMap) {
+    os << fact.first << "|->" << fact.second << "\n";
+  }
+  return os;
+}
+
+inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const InsFactMap &inMap) {
+  for (auto &entry : inMap) {
+    os << *entry.first << "\n" << entry.second << "\n";
+  }
+  return os;
+}
 
 } // namespace dataflow
-
-#endif // UTILS_H
