@@ -98,7 +98,7 @@ namespace dataflow {
       }
       return left & right;
     case llvm::CmpInst::FCMP_ONE:
-    case llvm::CmpInst::ICMP_NE:        
+    case llvm::CmpInst::ICMP_NE:    
     case llvm::CmpInst::ICMP_SLT:
     case llvm::CmpInst::ICMP_SLE:
     case llvm::CmpInst::ICMP_ULT:
@@ -107,9 +107,7 @@ namespace dataflow {
     case llvm::CmpInst::ICMP_SGT:
     case llvm::CmpInst::ICMP_UGE:
     case llvm::CmpInst::ICMP_UGT:
-      if (left.overlaps(right)) {
-        
-      }
+      //TODO: improve this
     default:
       return left | right;
     }
