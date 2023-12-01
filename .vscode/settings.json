@@ -60,6 +60,7 @@
         "string": "cpp",
         "string_view": "cpp",
         "variant": "cpp",
-        "*.def": "cpp"
+        "*.def": "cpp",
+        "unordered_set": "cpp"
     }
 }

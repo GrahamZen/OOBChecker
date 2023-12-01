@@ -62,7 +62,7 @@ TEST_CASE("basic arithmetic", "[domain]") {
         REQUIRE((D{-2,-1}/D{-4,-3}) == D{0});
         REQUIRE((D{-1,2}/D{3,4} == D{0}));
         REQUIRE((D{-1,2}/D{-4,-3} == D{0}));
-        REQUIRE((D{1,2}/D{-3,4} == INF));
+        REQUIRE((D{1,2}/D{-3,4} == INF));        
     }
 }
 

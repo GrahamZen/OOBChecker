@@ -1,0 +1,16 @@
+Pointer Analysis Results:
+  %a      : { @(%a = alloca i32, align 4); }
+  %a1     : { @(%a1 = alloca i32, align 4); }
+  %b      : { @(%b = alloca i32, align 4); }
+  %c      : { @(%c = alloca i32, align 4); }
+  %d      : { @(%d = alloca i32, align 4); }
+  %retval : { @(%retval = alloca i32, align 4); }
+
+Pointer Analysis Results:
+  %a      : { @(%a = alloca i32, align 4); }
+  %a1     : { @(%a1 = alloca i32, align 4); }
+  %b      : { @(%b = alloca i32, align 4); }
+  %c      : { @(%c = alloca i32, align 4); }
+  %d      : { @(%d = alloca i32, align 4); }
+  %retval : { @(%retval = alloca i32, align 4); }
+

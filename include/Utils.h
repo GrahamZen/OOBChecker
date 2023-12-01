@@ -59,14 +59,14 @@ void printInstructionTransfer(const llvm::Instruction *ins, const FactMap& inMap
  * analysis.
  *
  * @param func Function whose dataflow analysis result to print.
- * @param inMap Map of In memory of every instruction in function F.
- * @param outMap Map of Out memory of every instruction in function F.
+ * @param inMap Map of In memory of every instruction in function func.
+ * @param outMap Map of Out memory of every instruction in function func.
  */
 void printMap(const llvm::Function &func, const InsFactMap &inMap, const InsFactMap &outMap);
 
 inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const FactMap &factMap) {
   for (auto &fact : factMap) {
-    os << fact.first << "|->" << fact.second << "\n";
+    os << fact.first << " |-> " << fact.second << "\n";
   }
   return os;
 }

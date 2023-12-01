@@ -8,10 +8,7 @@
             "program": "/usr/bin/opt",
             "args": [
                 "-load", "${workspaceFolder}/build/OOBChecker.so",
-                "-OOBChecker", "${input:testFileName}.ll",
-                "-disable-output",
-                ">",
-                "${workspaceFolder}/test/${input:testFileName}.out"
+                "-OOBChecker", "${input:testFileName}.ll"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

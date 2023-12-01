@@ -33,7 +33,7 @@ std::string address(const llvm::Value *val) {
   return code;
 }
 
-IntervalDomain getOrDefault(const FactMap& facts, const llvm::Value *val) {
+IntervalDomain getOrExtract(const FactMap& facts, const llvm::Value *val) {
   auto key = variable(val);
   if (facts.count(key)) {
     return facts.at(key);
@@ -53,6 +53,11 @@ void printMap(const llvm::Function &func, const InsFactMap &inMap, const InsFact
     llvm::outs() << outMap.at(ins) << "\n";
     llvm::outs() << "\n";
   }
+}
+
+void printInstructionTransfer(const llvm::Instruction *ins, const FactMap& inMap,
+                              const FactMap& outMap) {
+  llvm::outs() << variable(ins) << "\nIN =====\n" << inMap << "\nOUT =====\n" << outMap << "\n";
 }
 
 } // namespace dataflow

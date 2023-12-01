@@ -80,9 +80,9 @@ IntervalDomain& IntervalDomain::operator/=(const IntervalDomain &other) {
       hi = 1 / other.lo;
     } else if (other.hi == 0) {
       lo = NEG_INF;
-      hi = 1 / other.lo;
+      hi = other.lo ? 1 / other.lo : INF;
     } else if (other.lo == 0) {
-      lo = 1 / other.hi;
+      lo = other.hi ? 1 / other.hi : NEG_INF;
       hi = INF;
     } else {
       lo = NEG_INF;
