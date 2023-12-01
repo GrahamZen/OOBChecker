@@ -51,9 +51,18 @@ public:
     if (unknown || other.unknown) return true;
     return lo <= other.hi && other.lo <= hi;
   }
+  void cut(const IntervalDomain &other);
+  
   bool isUnknown() const {
     return unknown;
   }
+  bool isEmpty() const {
+    return lo > hi;
+  }
+
+  int lower() const { return lo; }
+  int upper() const { return hi; }
+
   /**
    * @brief intersects a domain with another one
    * @param other the domain to be intersected with.

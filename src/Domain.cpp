@@ -24,6 +24,17 @@ IntervalDomain::IntervalDomain(const llvm::Value *val) {
   }
 #endif
 }
+
+void IntervalDomain::cut(const IntervalDomain &other) {
+  if (unknown || other.unknown) return;
+  if (!overlaps(other)) return;
+  if (lo <= other.lo) {
+    hi = std::min(hi, other.lo - 1);
+  } else {
+    lo = std::max(lo, other.hi + 1);
+  }
+}
+
 IntervalDomain& IntervalDomain::operator&=(const IntervalDomain& other) {
   if (unknown || other.unknown) {
     return *this = UNINIT();
@@ -74,28 +85,23 @@ IntervalDomain& IntervalDomain::operator/=(const IntervalDomain &other) {
     return *this = UNINIT();
   }
 
-  if (lo == hi && lo == 1) {
-    if (!other.contains(0)) {
-      lo = 1 / other.hi;
-      hi = 1 / other.lo;
-    } else if (other.hi == 0) {
-      lo = NEG_INF;
-      hi = other.lo ? 1 / other.lo : INF;
-    } else if (other.lo == 0) {
-      lo = other.hi ? 1 / other.hi : NEG_INF;
-      hi = INF;
-    } else {
-      lo = NEG_INF;
-      hi = INF;
-    }
+  if (other.contains(0)) {
+    auto div = [](int x, int y) {
+      if (y == 0) return INF;
+      return x / y;
+    };
+    lo = std::min({div(lo, other.lo), div(lo, other.hi), div(hi, other.lo), div(hi, other.hi)});
+    hi = INF;
   } else {
-    auto tmp = IntervalDomain {1} / other;
-    *this *= tmp;
+    auto it = std::minmax({lo / other.lo, lo / other.hi, hi / other.lo, hi / other.hi});
+    lo = it.first;
+    hi = it.second;
   }
   return *this;
 }
 bool IntervalDomain::operator==(const IntervalDomain &other) const {
   if (unknown ^ other.unknown) return false;
+  if (lo > hi && other.lo > other.hi) return true;
   return (unknown && other.unknown) || (lo == other.lo && hi == other.hi);
 }
 
