@@ -8,7 +8,13 @@ TEST_CASE("basic arithmetic", "[domain]") {
     auto INF = D::INF_DOMAIN();
 
     SECTION("addition") {
-        REQUIRE((D{1}+D{1}) == D{2});
+        for (int a = 1; a <= 10; ++a) {
+            for (int b = 1; b <= 10; ++b) {
+                REQUIRE((D{a}+D{b}) == D{a+b});
+                REQUIRE((D{b}+D{a}) == D{b+a});
+            }
+        }
+
         REQUIRE((D{1,2}+D{1,2}) == D{2,4});
         REQUIRE((D{1,2}+D{3,4}) == D{4,6});
         REQUIRE((D{1,2}+D{-4,-3} == D{-3,-1}));
@@ -22,7 +28,15 @@ TEST_CASE("basic arithmetic", "[domain]") {
     }
 
     SECTION("subtraction and negation") {
-        REQUIRE((D{1}-D{1}) == D{0});
+        for (int a = 1; a <= 10; ++a) {
+            for (int b = 1; b <= 10; ++b) {
+                REQUIRE((D{a}-D{b}) == D{a-b});
+                REQUIRE((D{b}-D{a}) == D{b-a});
+                REQUIRE((-D{a}-D{b}) == D{-a-b});
+                REQUIRE((-D{b}-D{a}) == D{-b-a});
+            }
+        }
+        
         REQUIRE((D{2,10}-D{3} == D{-1,7}));
         REQUIRE((D{1,2}-D{3,4}) == D{-3,-1});
         REQUIRE((D{1,2}-D{-4,-3} == D{4,6}));
@@ -31,7 +45,6 @@ TEST_CASE("basic arithmetic", "[domain]") {
         
         REQUIRE((-D{1}) == D{-1});
         REQUIRE((-D{1,2} == D{-2,-1}));
-        REQUIRE((D{1}-D{1}) == D{0});
         REQUIRE((D{2,10}+-D{3} == D{-1,7}));
         REQUIRE((D{1,2}+-D{3,4}) == D{-3,-1});
         REQUIRE((D{1,2}+-D{-4,-3} == D{4,6}));
@@ -40,7 +53,15 @@ TEST_CASE("basic arithmetic", "[domain]") {
     }
 
     SECTION("multiplication") {
-        REQUIRE((D{1}*D{1}) == D{1});
+        for (int a = 1; a <= 10; ++a) {
+            for (int b = 1; b <= 10; ++b) {
+                REQUIRE((D{a}*D{b}) == D{a*b});
+                REQUIRE((D{a}*D{-b}) == D{-a*b});
+                REQUIRE((D{-a}*D{b}) == D{-a*b});
+                REQUIRE((D{-a}*D{-b}) == D{a*b});
+            }
+        }
+
         REQUIRE((D{1,2}*D{1,2}) == D{1,4});
         REQUIRE((D{1,2}*D{3,4}) == D{3,8});
         REQUIRE((D{1,2}*D{-4,-3} == D{-8,-3}));
@@ -54,7 +75,14 @@ TEST_CASE("basic arithmetic", "[domain]") {
     }
 
     SECTION("division") {
-        REQUIRE((D{1}/D{1}) == D{1});
+        for (int a = 1; a <= 10; ++a) {
+            for (int b = 1; b <= 10; ++b) {
+                REQUIRE((D{a}/D{b}) == D{a/b});
+                REQUIRE((D{a}/D{-b}) == D{-a/b});
+                REQUIRE((D{-a}/D{b}) == D{-a/b});
+                REQUIRE((D{-a}/D{-b}) == D{a/b});
+            }
+        }
         REQUIRE((D{1,2}/D{1,2}) == D{0,2});
         REQUIRE((D{1,2}/D{3,4}) == D{0});
         REQUIRE((D{1,2}/D{-4,-3} == D{0}));
@@ -62,7 +90,7 @@ TEST_CASE("basic arithmetic", "[domain]") {
         REQUIRE((D{-2,-1}/D{-4,-3}) == D{0});
         REQUIRE((D{-1,2}/D{3,4} == D{0}));
         REQUIRE((D{-1,2}/D{-4,-3} == D{0}));
-        REQUIRE((D{1,2}/D{-3,4} == INF));        
+        REQUIRE((D{1,2}/D{-3,4} == D{0,INF.upper()}));      
     }
 }
 

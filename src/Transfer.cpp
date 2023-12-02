@@ -98,13 +98,17 @@ namespace dataflow {
       }
       return left & right;
     case llvm::CmpInst::FCMP_ONE:
-    case llvm::CmpInst::ICMP_NE:
+    case llvm::CmpInst::ICMP_NE:    
     case llvm::CmpInst::ICMP_SLT:
     case llvm::CmpInst::ICMP_SLE:
+    case llvm::CmpInst::ICMP_ULT:
+    case llvm::CmpInst::ICMP_ULE:
     case llvm::CmpInst::ICMP_SGE:
     case llvm::CmpInst::ICMP_SGT:
+    case llvm::CmpInst::ICMP_UGE:
+    case llvm::CmpInst::ICMP_UGT:
+      //TODO: improve this
     default:
-      // TODO: can be improved
       return left | right;
     }
   }
