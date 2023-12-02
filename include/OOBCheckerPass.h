@@ -65,9 +65,10 @@ protected:
    * Can the Instruction Inst incurr an array out of bounds error?
    *
    * @param ins Instruction to check.
+   * @param context Context information at this point of the analysis.
    * @return true if the instruction can cause an array out of bounds error.
    */
-  bool check(llvm::Instruction *ins);
+  bool check(llvm::Instruction *ins, const AnalysisContext& context);
 
   const char* getAnalysisName() const { return "OOBCheckerPass"; }
 };

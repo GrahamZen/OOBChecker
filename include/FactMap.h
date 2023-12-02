@@ -11,16 +11,10 @@ class FactMap {
 
     std::unordered_map<std::string, DomainType> _data;
 public:
-    template<typename Iter, typename = typename std::enable_if<
-        std::is_same<typename std::iterator_traits<Iter>::value_type, std::pair<const std::string, DomainType>>::value>::type
-    >
-    Iter begin() {
+    Iterator begin() {
         return _data.begin();
     }
-    template<typename Iter, typename = typename std::enable_if<
-        std::is_same<typename std::iterator_traits<Iter>::value_type, std::pair<const std::string, DomainType>>::value>::type
-    >
-    Iter end() {
+    Iterator end() {
         return _data.end();
     }
     ConstIterator begin() const {

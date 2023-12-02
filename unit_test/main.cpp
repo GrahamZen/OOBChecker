@@ -1,11 +1,11 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include "Domain.h"
+#include "Interval.h"
 using namespace dataflow;
 
 TEST_CASE("basic arithmetic", "[domain]") {
-    using D = IntervalDomain;
-    auto INF = D::INF_DOMAIN();
+    using D = Interval;
+    auto INF = D::INF();
 
     SECTION("addition") {
         for (int a = 1; a <= 10; ++a) {
@@ -94,50 +94,9 @@ TEST_CASE("basic arithmetic", "[domain]") {
     }
 }
 
-TEST_CASE("unknown", "[domain]") {
-    using D = IntervalDomain;
-    auto INF = D::INF_DOMAIN();
-    auto UNINIT = D::UNINIT();
-
-    SECTION("addition") {
-        REQUIRE((D{1}+UNINIT) == UNINIT);
-        REQUIRE((UNINIT+D{1}) == UNINIT);
-        REQUIRE((UNINIT+UNINIT) == UNINIT);
-        REQUIRE((INF+UNINIT) == UNINIT);
-    }
-
-    SECTION("subtraction and negation") {
-        REQUIRE((D{1}-UNINIT) == UNINIT);
-        REQUIRE((UNINIT-D{1}) == UNINIT);
-        REQUIRE((UNINIT-UNINIT) == UNINIT);
-        REQUIRE((INF-UNINIT) == UNINIT);
-        REQUIRE(-UNINIT == UNINIT);
-    }
-
-    SECTION("multiplication") {
-        REQUIRE((D{1}*UNINIT) == UNINIT);
-        REQUIRE((UNINIT*D{1}) == UNINIT);
-        REQUIRE((UNINIT*UNINIT) == UNINIT);
-        REQUIRE((INF*UNINIT) == UNINIT);
-    }
-
-    SECTION("division") {
-        REQUIRE((D{1}/UNINIT) == UNINIT);
-        REQUIRE((UNINIT/D{1}) == UNINIT);
-        REQUIRE((UNINIT/UNINIT) == UNINIT);
-        REQUIRE((INF/UNINIT) == UNINIT);
-    }
-
-    SECTION("chained") {
-        REQUIRE(D{2,3}*D{5,34}/D{2,3}+UNINIT == UNINIT);
-        REQUIRE(D{2,3}*D{5,34}/D{2,3}+INF/UNINIT == UNINIT);
-    }
-}
-
 TEST_CASE("comparison", "[domain]") {
     using D = IntervalDomain;
-    auto INF = D::INF_DOMAIN();
-    auto UNINIT = D::UNINIT();
+    auto INF = D::INF();
 
     SECTION("equality") {
         REQUIRE(1 == D{1});
@@ -146,12 +105,8 @@ TEST_CASE("comparison", "[domain]") {
         REQUIRE(1 == D{1,1});
         REQUIRE(D{1,2} == D{1,2});
         REQUIRE(INF == INF);
-        REQUIRE(UNINIT == UNINIT);
         REQUIRE(-INF == -INF);
-        REQUIRE(-UNINIT == -UNINIT);
         REQUIRE(1 != INF);
-        REQUIRE(1 != UNINIT);
-        REQUIRE(INF != UNINIT);
     }
 }
 

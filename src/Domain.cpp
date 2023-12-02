@@ -18,95 +18,68 @@ IntervalDomain::IntervalDomain(const llvm::Value *val) {
   unknown = true;
 #else
   if (auto ci = llvm::dyn_cast<llvm::ConstantInt>(val)) {
-    lo = hi = ci->getSExtValue();
+    auto sval = ci->getSExtValue();
+    _intervals.emplace_back(sval, sval);
+    _unknown = false;
   } else {
-    unknown = true;
+    _unknown = true;
   }
 #endif
 }
-
-void IntervalDomain::cut(const IntervalDomain &other) {
-  if (unknown || other.unknown) return;
-  if (!overlaps(other)) return;
-  if (lo <= other.lo) {
-    hi = std::min(hi, other.lo - 1);
-  } else {
-    lo = std::max(lo, other.hi + 1);
+void IntervalDomain::maintain() {
+  auto newInterval = std::vector<Interval>();
+  std::sort(_intervals.begin(), _intervals.end(), [](const Interval &a, const Interval &b) {
+    return a.lower() < b.lower();
+  });
+  for (const auto &interval : _intervals) {
+    if (newInterval.empty()) {
+      newInterval.push_back(interval);
+    } else {
+      auto &last = newInterval.back();
+      if (last.overlaps(interval)) {
+        last |= interval;
+      } else {
+        newInterval.push_back(interval);
+      }
+    }
   }
 }
 
+IntervalDomain& IntervalDomain::genImpl(const IntervalDomain &other, 
+  Interval& (Interval::*op)(const Interval&))
+{
+  if (_unknown || other._unknown)
+    return *this = UNINIT();
+  for (auto &interval : _intervals) {
+    for (auto &otherInterval : other._intervals) {
+      interval = (interval.*op)(otherInterval);
+    }
+  }
+  maintain();
+  return *this;
+}
+
 IntervalDomain& IntervalDomain::operator&=(const IntervalDomain& other) {
-  if (unknown || other.unknown) {
+  if (_unknown || other._unknown) {
     return *this = UNINIT();
   }
   if (!overlaps(other)) {
     return *this = EMPTY();
   }
-  lo = std::max(lo, other.lo);
-  hi = std::min(hi, other.hi);
+
   return *this;
 }
 IntervalDomain& IntervalDomain::operator|=(const IntervalDomain& other) {
-  if (unknown || other.unknown) {
+  if (_unknown || other._unknown) {
     return *this = UNINIT();
   }
-  lo = std::min(lo, other.lo);
-  hi = std::max(hi, other.hi);
-  return *this;
-}
-
-IntervalDomain& IntervalDomain::operator+=(const IntervalDomain &other) {
-  if (unknown || other.unknown) {
-    return *this = UNINIT();
-  }
-  lo += other.lo;
-  hi += other.hi;
-  return *this;
-}
-IntervalDomain& IntervalDomain::operator-=(const IntervalDomain &other) {
-  if (unknown || other.unknown) {
-    return *this = UNINIT();
-  }
-  lo -= other.hi;
-  hi -= other.lo;
-  return *this;
-}
-IntervalDomain& IntervalDomain::operator*=(const IntervalDomain &other) {
-  if (unknown || other.unknown) {
-    return *this = UNINIT();
-  }
-  auto it = std::minmax({lo * other.lo, lo * other.hi, hi * other.lo, hi * other.hi});
-  lo = it.first;
-  hi = it.second;
-  return *this;
-}
-IntervalDomain& IntervalDomain::operator/=(const IntervalDomain &other) {
-  if (unknown || other.unknown) {
-    return *this = UNINIT();
-  }
-
-  if (other.contains(0)) {
-    auto div = [](int x, int y) {
-      if (y == 0) return INF;
-      return x / y;
-    };
-    lo = std::min({div(lo, other.lo), div(lo, other.hi), div(hi, other.lo), div(hi, other.hi)});
-    hi = INF;
-  } else {
-    auto it = std::minmax({lo / other.lo, lo / other.hi, hi / other.lo, hi / other.hi});
-    lo = it.first;
-    hi = it.second;
-  }
+  _intervals.insert(_intervals.end(), other._intervals.begin(), other._intervals.end());
+  maintain();
   return *this;
 }
 bool IntervalDomain::operator==(const IntervalDomain &other) const {
-  if (unknown ^ other.unknown) return false;
-  if (lo > hi && other.lo > other.hi) return true;
-  return (unknown && other.unknown) || (lo == other.lo && hi == other.hi);
-}
-
-void IntervalDomain::print(llvm::raw_ostream &os) const {
-  os << "[" << lo << ", " << hi << "]";
+  if (_unknown ^ other._unknown) return false;
+  return (_unknown && other._unknown) || _intervals == other._intervals;
 }
 
 } // namespace dataflow

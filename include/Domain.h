@@ -1,67 +1,78 @@
 #pragma once
 
 #include <limits>
-
-#ifdef UNIT_TEST
-#include <iostream>
-namespace llvm {
-using raw_ostream = std::ostream;
-using Value = int;
-#define outs() std::cout
-}
-#else
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/IR/Value.h>
-#endif
+#include <vector>
+#include "Interval.h"
 
 namespace dataflow {
-
-//===----------------------------------------------------------------------===//
-// Abstract Domain Implementation
-//===----------------------------------------------------------------------===//
-
-/*
- * Implement your abstract domain.
- */
 class IntervalDomain {
-  static const int INF = std::numeric_limits<int>::max();
-  static const int NEG_INF = std::numeric_limits<int>::min();
+  using ConstIterator = std::vector<Interval>::const_iterator;
 
-  int lo, hi;
-  bool unknown { false };
+  std::vector<Interval> _intervals;
+  bool _unknown { true };
+  void maintain();
+  IntervalDomain& genImpl(const IntervalDomain &other, Interval& (Interval::*op)(const Interval&));
+
 public:
-  IntervalDomain(int lo, int hi) : lo(lo), hi(hi) {}
-  IntervalDomain(int val) : lo(val), hi(val) {}
-  IntervalDomain() : unknown(true) {}
-  IntervalDomain(const llvm::Value *val);
+  IntervalDomain(int lo, int hi) {
+    if (lo <= hi) {
+      _intervals.emplace_back(lo, hi);
+      _unknown = false;
+    }
+  }
+  IntervalDomain() = default;
+  IntervalDomain(int val) : IntervalDomain(val, val) {}
+  explicit IntervalDomain(bool unknown) : _unknown(unknown) {}
+  explicit IntervalDomain(const llvm::Value *val);
 
-  static IntervalDomain INF_DOMAIN() { return IntervalDomain(NEG_INF, INF); }
-  static IntervalDomain UNINIT() { return IntervalDomain(); }
-  static IntervalDomain EMPTY() { return IntervalDomain(2,1); }
+  static IntervalDomain INF_DOMAIN() { return IntervalDomain(Interval::INT_NEG_INF, Interval::INT_INF); }
+  static IntervalDomain UNINIT() { return IntervalDomain(true); }
+  static IntervalDomain EMPTY() { return IntervalDomain(false); }
+  
+  ConstIterator begin() const {
+    return _intervals.begin();
+  }
+  ConstIterator end() const {
+    return _intervals.end();
+  }
+  size_t size() const {
+    return _intervals.size();
+  }
 
   bool contains(int val) const {
-    if (unknown) return true;
-    return lo <= val && val <= hi;
-  }
-  bool contains(const IntervalDomain &other) const {
-    if (unknown) return true;
-    return lo <= other.lo && other.hi <= hi;
+    if (_unknown) return true;
+    for (auto &interval : _intervals) {
+      if (interval.contains(val)) return true;
+    }
+    return false;
   }
   bool overlaps(const IntervalDomain &other) const {
-    if (unknown || other.unknown) return true;
-    return lo <= other.hi && other.lo <= hi;
+    if (_unknown || other._unknown) return true;
+    for (auto &interval : _intervals) {
+      for (auto &otherInterval : other._intervals) {
+        if (interval.overlaps(otherInterval)) return true;
+      }
+    }
+    return false;
   }
-  void cut(const IntervalDomain &other);
   
   bool isUnknown() const {
-    return unknown;
+    return _unknown;
   }
   bool isEmpty() const {
-    return lo > hi;
+    return _intervals.empty();
   }
 
-  int lower() const { return lo; }
-  int upper() const { return hi; }
+  int lower() const {
+    if (_unknown) return Interval::INT_NEG_INF;
+    if (_intervals.empty()) return Interval::INT_INF;
+    return _intervals.front().lower();
+  }
+  int upper() const {
+    if (_unknown) return Interval::INT_INF;
+    if (_intervals.empty()) return Interval::INT_NEG_INF;
+    return _intervals.back().upper();
+  }
 
   /**
    * @brief intersects a domain with another one
@@ -75,10 +86,18 @@ public:
    * @return the joined domain.
    */
   IntervalDomain& operator|=(const IntervalDomain& other);
-  IntervalDomain& operator+=(const IntervalDomain &other);
-  IntervalDomain& operator-=(const IntervalDomain &other);
-  IntervalDomain& operator*=(const IntervalDomain &other);
-  IntervalDomain& operator/=(const IntervalDomain &other);
+  IntervalDomain& operator+=(const IntervalDomain &other) {
+    return genImpl(other, &Interval::operator+=);
+  }
+  IntervalDomain& operator-=(const IntervalDomain &other) {
+    return genImpl(other, &Interval::operator-=);
+  }
+  IntervalDomain& operator*=(const IntervalDomain &other) {
+    return genImpl(other, &Interval::operator*=);
+  }
+  IntervalDomain& operator/=(const IntervalDomain &other) {
+    return genImpl(other, &Interval::operator/=);
+  }
   bool operator==(const IntervalDomain &other) const;
 
   IntervalDomain operator&(const IntervalDomain& other) const {
@@ -111,26 +130,10 @@ public:
     res /= other;
     return res;
   }
-  IntervalDomain operator-() const {
-    if (unknown) return *this;
-    return IntervalDomain(-hi, -lo);
-  }
-  bool operator<(const IntervalDomain &other) const {
-    return hi < other.lo;
-  }
-  bool operator>(const IntervalDomain &other) const {
-    return lo > other.hi;
-  }
-  bool operator<=(const IntervalDomain &other) const {
-    return hi <= other.lo;
-  }
-  bool operator>=(const IntervalDomain &other) const {
-    return lo >= other.hi;
-  }
+  IntervalDomain operator-() const;
   bool operator!=(const IntervalDomain &other) const {
     return !(*this == other);
   }
-  void print(llvm::raw_ostream &os) const;
 };
 
 inline IntervalDomain operator+(int lhs, const IntervalDomain &rhs) {
@@ -151,22 +154,13 @@ inline bool operator==(int lhs, const IntervalDomain &rhs) {
 inline bool operator!=(int lhs, const IntervalDomain &rhs) {
   return IntervalDomain { lhs } != rhs;
 }
-inline bool operator<(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } < rhs;
-}
-inline bool operator>(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } > rhs;
-}
-inline bool operator<=(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } <= rhs;
-}
-inline bool operator>=(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } >= rhs;
-}
 
-inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const IntervalDomain& domain ) {
-  domain.print(os);
-  return os;
+inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const IntervalDomain& domain) {
+  int i = 0;
+  for (auto& interval : domain) {
+    os << interval << ",\n"[i == domain.size() - 1];
+    ++i;
+  }
 }
 
 } // namespace dataflow

@@ -3,7 +3,7 @@
 
 namespace dataflow {
 
-bool OOBCheckerPass::check(llvm::Instruction *ins) {
+bool OOBCheckerPass::check(llvm::Instruction *ins, const AnalysisContext& context) {
     // TODO
     return false;
 }
@@ -30,7 +30,7 @@ bool OOBCheckerPass::runOnFunction(llvm::Function &func) {
 
   for (auto iter = inst_begin(func), end = inst_end(func); iter != end; ++iter) {
     auto ins = &(*iter);
-    if (check(ins)) {
+    if (check(ins, context)) {
       llvm::outs() << "Potential array out of bounds error: " << *ins << "\n";
     }
   }

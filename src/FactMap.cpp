@@ -19,6 +19,7 @@ FactMap& FactMap::operator+=(const FactMap& other) {
             operator[](kvp.first) |= kvp.second;
         }
     }
+    return *this;
 }
 bool FactMap::operator==(const FactMap& other) const {
     auto cmpOne = [](const FactMap& a, const FactMap& b) {
