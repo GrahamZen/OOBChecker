@@ -32,7 +32,7 @@ namespace dataflow {
 
     IntervalDomain ret;
     for (unsigned int i = 0; i < phi->getNumIncomingValues(); ++i) {
-      ret |= getOrExtract(inMap, phi->getIncomingValue(i));
+      ret |= inMap.getOrExtract(phi->getIncomingValue(i));
     }
     return ret;
   }
@@ -46,8 +46,8 @@ namespace dataflow {
    * @return Domain of binary operator
    */
   IntervalDomain eval(const llvm::BinaryOperator *binOp, const FactMap &inMap) {
-    const auto left = getOrExtract(inMap, binOp->getOperand(0));
-    const auto right = getOrExtract(inMap, binOp->getOperand(1));
+    const auto left = inMap.getOrExtract(binOp->getOperand(0));
+    const auto right = inMap.getOrExtract(binOp->getOperand(1));
     switch (binOp->getOpcode())
     {
     case llvm::Instruction::Add:
@@ -72,7 +72,7 @@ namespace dataflow {
    * @return Domain of Cast
    */
   IntervalDomain eval(const llvm::CastInst *cast, const FactMap &inMap) {
-    return getOrExtract(inMap, cast->getOperand(0));
+    return inMap.getOrExtract(cast->getOperand(0));
   }
 
   /**
@@ -84,8 +84,8 @@ namespace dataflow {
    * @return Domain of Cmp
    */
   IntervalDomain eval(const llvm::CmpInst *cmp, const FactMap &inMap) {
-    auto left = getOrExtract(inMap, cmp->getOperand(0));
-    auto right = getOrExtract(inMap, cmp->getOperand(1));
+    auto left = inMap.getOrExtract(cmp->getOperand(0));
+    auto right = inMap.getOrExtract(cmp->getOperand(1));
 
     switch (cmp->getPredicate())
     {
@@ -130,13 +130,13 @@ namespace dataflow {
       const auto val = store->getValueOperand();
       if (val->getType()->isPointerTy())
         return ret;
-      const auto valDomain = getOrExtract(inFacts, val);
+      const auto valDomain = inFacts.getOrExtract(val);
       std::string toStoreStr = variable(toStore);
       for (auto ptr : context.pointerSet) {
         std::string ptrStr = variable(ptr);
         if (context.pa.alias(toStoreStr, ptrStr)) {
-          if (inFacts.count(ptrStr)) {
-            ret[ptrStr] = getOrExtract(inFacts, ptr) | valDomain;
+          if (inFacts.contains(ptrStr)) {
+            ret[ptrStr] = inFacts.getOrExtract(ptr) | valDomain;
           } else {
             ret[ptrStr] = valDomain;
           }
@@ -146,13 +146,13 @@ namespace dataflow {
     } else if (auto load = llvm::dyn_cast<llvm::LoadInst>(ins)) {
       auto pointer = load->getPointerOperand();
       if (load->getType()->isIntegerTy()) {
-        ret[variable(load)] = getOrExtract(inFacts, pointer);
+        ret[variable(load)] = inFacts.getOrExtract(pointer);
       }
     } else if (auto branch = llvm::dyn_cast<llvm::BranchInst>(ins)) {
       // Analysis is flow-insensitive, so do nothing here.
     } else if (auto call = llvm::dyn_cast<llvm::CallInst>(ins)) {
       if (call->getType()->isIntegerTy()) {
-        ret[variable(call)] = getOrExtract(inFacts, call);
+        ret[variable(call)] = inFacts.getOrExtract(call);
       }
     } else if (auto retIns = llvm::dyn_cast<llvm::ReturnInst>(ins)) {
       // Analysis is intra-procedural, so do nothing here.
@@ -173,7 +173,7 @@ namespace dataflow {
       const auto val = store->getValueOperand();
       if (val->getType()->isPointerTy())
         return ret;
-      const auto valDomain = getOrExtract(inFacts, val);
+      const auto valDomain = inFacts.getOrExtract(val);
       std::string toStoreStr = variable(toStore);
       for (auto ptr : context.pointerSet) {
         std::string ptrStr = variable(ptr);

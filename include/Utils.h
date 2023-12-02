@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Domain.h"
+#include "FactMap.h"
 #include <unordered_map>
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Function.h>
@@ -9,7 +10,6 @@ extern const char *WHITESPACES;
 
 namespace dataflow {
 
-using FactMap = std::unordered_map<std::string, IntervalDomain>;
 using InsFactMap = std::unordered_map<const llvm::Instruction*, FactMap>;
 
 /**
@@ -27,15 +27,6 @@ std::string variable(const llvm::Value *val);
  * @return std::string The encoded memory address of Val
  */
 std::string address(const llvm::Value *val);
-
-/**
- * @brief Get the Domain of Val from Memory Or try Extracting it.
- *
- * @param map The domain of val.
- * @param val Value whose domain is to be extracted from mem.
- * @return Domain Domain of val in mem
- */
-IntervalDomain getOrExtract(const FactMap& map, const llvm::Value *val);
 
 /**
  * @brief Print the Before and After domains of an instruction
@@ -63,13 +54,6 @@ void printInstructionTransfer(const llvm::Instruction *ins, const FactMap& inMap
  * @param outMap Map of Out memory of every instruction in function func.
  */
 void printMap(const llvm::Function &func, const InsFactMap &inMap, const InsFactMap &outMap);
-
-inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const FactMap &factMap) {
-  for (auto &fact : factMap) {
-    os << fact.first << " |-> " << fact.second << "\n";
-  }
-  return os;
-}
 
 inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const InsFactMap &inMap) {
   for (auto &entry : inMap) {

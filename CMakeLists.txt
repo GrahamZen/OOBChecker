@@ -16,12 +16,5 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_
 endif()
 
 set(CMAKE_BUILD_TYPE Debug)
-
-add_llvm_library(OOBChecker MODULE
-  src/PointerAnalysis.cpp
-  src/OOBCheckerPass.cpp
-  src/Transfer.cpp
-  src/ChaoticIteration.cpp
-  src/Domain.cpp
-  src/Utils.cpp
-)
+file(GLOB_RECURSE SOURCES src/*.cpp include/*.h)
+add_llvm_library(OOBChecker MODULE ${SOURCES})

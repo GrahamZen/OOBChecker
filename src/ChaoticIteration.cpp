@@ -53,46 +53,6 @@ namespace dataflow {
         return ret;
     }
 
-    /**
-     * @brief Joins two facts, accounting for Domain values.
-     * @note the first map will be updated
-     *
-     * @param mp1 First fact map.
-     * @param mp2 Second fact map.
-     */
-    void join(FactMap& mp1, const FactMap& mp2) {
-        for (auto kvp : mp2) {
-            if (mp1.count(kvp.first) == 0) {
-                mp1.insert(kvp);
-            } else {
-                mp1.at(kvp.first) |= kvp.second;
-            }
-        }
-    }
-
-    /**
-     * @brief This function returns true if the two fact maps are equal.
-     *
-     * @param mp1 First fact map.
-     * @param mp2 Second fact map.
-     * @return true if the two are equal, false otherwise.
-     */
-    bool equal(const FactMap& mp1, const FactMap& mp2) {
-        auto cmpOne = [](const FactMap& a, const FactMap& b) {
-            for (auto kvp : a) {
-                if (b.count(kvp.first)) {
-                    if (kvp.second != b.at(kvp.first))
-                        return false;
-                } else {
-                    if (kvp.second != IntervalDomain::UNINIT())
-                        return false;
-                }
-            }
-            return true;
-        };
-        return cmpOne(mp1,mp2) && cmpOne(mp2,mp1);
-    }
-
     void OOBCheckerPass::doAnalysis(const llvm::Function& func, AnalysisContext& context) {
         std::queue<const llvm::Instruction*> insQueue;
         auto firstIns = &(*inst_begin(func));
@@ -112,19 +72,19 @@ namespace dataflow {
             insQueue.pop();
 
             for (auto predIns : getPredecessors(ins)) {
-                join(context.in.at(ins), context.out.at(predIns));
+                context.in.at(ins) += context.out.at(predIns);
             }
             // gen set
             auto gen = genSet(ins, context);
             auto kill = killSet(ins, context);
             auto newOut = context.in.at(ins);
             for (auto key : kill) {
-                if(newOut.count(key)) {
+                if(newOut.contains(key)) {
                     newOut.erase(key);
                 }
             }
-            join(newOut, gen);
-            if (!equal(newOut, context.out.at(ins))) {
+            newOut += gen;
+            if (newOut != context.out.at(ins)) {
                 for(auto succIns : getSuccessors(ins)) {
                     insQueue.emplace(succIns);
                 }
