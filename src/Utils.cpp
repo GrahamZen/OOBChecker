@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include "Domain.h"
+#include <sstream>
 
 const char *WHITESPACES = " \t\n\r";
 const size_t VARIABLE_PADDED_LEN = 8;
@@ -48,7 +49,35 @@ void printMap(const llvm::Function &func, const InsFactMap &inMap, const InsFact
 
 void printInstructionTransfer(const llvm::Instruction *ins, const FactMap& inMap,
                               const FactMap& outMap) {
-  llvm::outs() << variable(ins) << "\nIN =====\n" << inMap << "\nOUT =====\n" << outMap << "\n";
+  // print 2 maps side by side
+  llvm::outs() << variable(ins) << "\n";
+  int inWidth = 0;
+  std::vector<std::string> lines(std::max(inMap.size(), outMap.size()));
+  int iLines = 0;
+  for (auto &fact : inMap) {
+    std::ostringstream oss;
+    oss << fact.first << " |-> " << fact.second;
+    auto line = oss.str();
+    inWidth = std::max(inWidth, (int)line.size());
+    lines[iLines++] = std::move(line);
+  }
+
+  iLines = 0;
+  for (auto &fact : outMap) {
+    std::ostringstream oss;
+    oss << " | " << fact.first << " |-> " << fact.second;
+    auto line = oss.str();
+    lines[iLines].resize(inWidth, ' ');
+    lines[iLines].insert(lines[iLines].end(), line.begin(), line.end());
+    ++iLines;
+  }
+  std::string header = "IN";
+  header.resize(inWidth, ' ');
+  llvm::outs() << header << " | OUT\n";
+  for (auto &line : lines) {
+    llvm::outs() << line << "\n";
+  }
+  llvm::outs() << "\n";
 }
 
 } // namespace dataflow

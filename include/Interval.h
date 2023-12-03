@@ -118,7 +118,15 @@ inline bool operator==(int lhs, const Interval &rhs) {
 inline bool operator!=(int lhs, const Interval &rhs) {
   return Interval { lhs } != rhs;
 }
-inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const Interval& interval) {
+
+template <typename StreamLike>
+inline typename
+std::enable_if<
+    std::is_base_of<std::ostream, StreamLike>::value ||
+    std::is_same<StreamLike, llvm::raw_ostream>::value,
+    StreamLike&
+>::type
+operator<<(StreamLike &os, const Interval& interval) {
   os << "[" << interval.lower() << ", " << interval.upper() << "]";
   return os;
 }

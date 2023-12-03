@@ -140,10 +140,17 @@ public:
   }
 };
 
-inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const IntervalDomain& domain) {
+template <typename StreamLike>
+inline typename
+std::enable_if<
+    std::is_base_of<std::ostream, StreamLike>::value ||
+    std::is_same<StreamLike, llvm::raw_ostream>::value,
+    StreamLike&
+>::type
+operator<<(StreamLike &os, const IntervalDomain& domain) {
   int i = 0;
   for (auto& interval : domain) {
-    os << interval << ",\n"[i == domain.size() - 1];
+    os << interval << ", "[i == domain.size() - 1];
     ++i;
   }
   return os;

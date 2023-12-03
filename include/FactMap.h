@@ -29,6 +29,9 @@ public:
     ConstIterator cend() const {
         return _data.cend();
     }
+    size_t size() const {
+        return _data.size();
+    }
 
     DomainType& operator[](const std::string& key) {
         return _data[key];
