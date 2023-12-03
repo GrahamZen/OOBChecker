@@ -1,8 +1,8 @@
-void f() {
-  int x = 0;
-  int y = 2;
-  int z;
-  if (x < 1) {
-    z = y / x; // divide-by-zero within branch
-  }
+int main() {
+  int a[20];
+  int* b = a + 10;
+  int c = 2;
+  int d = 3; 
+  b[c < d] = 0; // out-of-bounds access
+  return 0;
 }

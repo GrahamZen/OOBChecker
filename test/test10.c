@@ -1,17 +1,10 @@
 #include <stdio.h>
 
 void f() {
-  int in = getchar();
-  int a = 10;
-  int b = 2;
-
-  if (in > 0) {
-    b = 100 + b;
-  } else if (in == 0) {
-    b = 1;
-  } else {
-    b = a + b;
-  }
-
-  int out = a / b;
+  int arr[] = {2, 1, 0};
+  int brr[] = {7, 2, 3};
+  int crr[7];
+  int* p = crr + arr[2];
+  int** q = &p + crr[brr[arr[2]]]; // out-of-bounds accesses
+  *q[2] = 6; // out-of-bounds access
 }

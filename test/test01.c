@@ -2,9 +2,8 @@ int main() {
   int a = 0;
   int b = 1;
   int c = a + 1;
-  int d = b / a; // Divide by zero
-  if (c) {
-    int a = 1;
-  }
+  if(1) a = 2;
+  int e[1];
+  e[a] = 0; // out of bounds
   return 0;
 }

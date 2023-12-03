@@ -1,12 +1,7 @@
 #include <stdio.h>
-
+#include <stdlib.h>
 void f() {
-  int x = getchar();
-  int y = 0;
-  if (x > 10) {
-    y = 1;
-  } else {
-    y = 2;
-  }
-  int z = x / y;
+  int* x = malloc(4 * sizeof(int));
+  x[4] = 0; // out-of-bounds access
+  free(x);
 }
