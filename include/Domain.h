@@ -79,13 +79,17 @@ public:
    * @param other the domain to be intersected with.
    * @return the intersected domain.
    */
-  IntervalDomain& operator&=(const IntervalDomain& other);
+  IntervalDomain& operator&=(const IntervalDomain& other) {
+    return genImpl(other, &Interval::operator&=);
+  }
   /**
    * @brief combines the information contained in two domains.
    * @param other the domain to be joined with.
    * @return the joined domain.
    */
-  IntervalDomain& operator|=(const IntervalDomain& other);
+  IntervalDomain& operator|=(const IntervalDomain& other) {
+    return genImpl(other, &Interval::operator|=);
+  }
   IntervalDomain& operator+=(const IntervalDomain &other) {
     return genImpl(other, &Interval::operator+=);
   }
@@ -136,31 +140,13 @@ public:
   }
 };
 
-inline IntervalDomain operator+(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } + rhs;
-}
-inline IntervalDomain operator-(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } - rhs;
-}
-inline IntervalDomain operator*(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } * rhs;
-}
-inline IntervalDomain operator/(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } / rhs;
-}
-inline bool operator==(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } == rhs;
-}
-inline bool operator!=(int lhs, const IntervalDomain &rhs) {
-  return IntervalDomain { lhs } != rhs;
-}
-
 inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const IntervalDomain& domain) {
   int i = 0;
   for (auto& interval : domain) {
     os << interval << ",\n"[i == domain.size() - 1];
     ++i;
   }
+  return os;
 }
 
 } // namespace dataflow

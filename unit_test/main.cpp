@@ -1,9 +1,11 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include "Interval.h"
+#include "Domain.h"
+
 using namespace dataflow;
 
-TEST_CASE("basic arithmetic", "[domain]") {
+TEST_CASE("basic arithmetic", "[interval]") {
     using D = Interval;
     auto INF = D::INF();
 
@@ -94,8 +96,8 @@ TEST_CASE("basic arithmetic", "[domain]") {
     }
 }
 
-TEST_CASE("comparison", "[domain]") {
-    using D = IntervalDomain;
+TEST_CASE("comparison", "[interval]") {
+    using D = Interval;
     auto INF = D::INF();
 
     SECTION("equality") {
@@ -110,3 +112,26 @@ TEST_CASE("comparison", "[domain]") {
     }
 }
 
+TEST_CASE("domain arithmetic", "[domain]") {
+    using D = IntervalDomain;
+    SECTION("addition") {
+        for (int a = 1; a <= 10; ++a) {
+            for (int b = 1; b <= 10; ++b) {
+                REQUIRE((D{a}+D{b}) == D{a+b});
+                REQUIRE((D{b}+D{a}) == D{b+a});
+            }
+        }
+
+        REQUIRE((D{1,2}+D{1,2}) == D{2,4});
+        REQUIRE((D{1,2}+D{3,4}) == D{4,6});
+        REQUIRE((D{1,2}+D{-4,-3} == D{-3,-1}));
+        REQUIRE((D{-2,-1}+D{3,4}) == D{1,3});
+        REQUIRE((D{-2,-1}+D{-4,-3}) == D{-6,-4});
+        REQUIRE((D{-1,2}+D{3,4} == D{2,6}));
+        REQUIRE((D{-1,2}+D{-4,-3} == D{-5,-1}));
+        REQUIRE((D{1,2}+D{-4,3} == D{-3,5}));
+        REQUIRE((D{-2,-1}+D{-4,3} == D{-6,2}));
+        REQUIRE((D{-2,1}+D{-4,3} == D{-6,4}));
+    }
+
+}

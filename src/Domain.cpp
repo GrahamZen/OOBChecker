@@ -15,7 +15,7 @@ namespace dataflow {
 IntervalDomain::IntervalDomain(const llvm::Value *val) {
 #ifdef UNIT_TEST
   (void) val;
-  unknown = true;
+  _unknown = true;
 #else
   if (auto ci = llvm::dyn_cast<llvm::ConstantInt>(val)) {
     auto sval = ci->getSExtValue();
@@ -43,6 +43,7 @@ void IntervalDomain::maintain() {
       }
     }
   }
+  _intervals = std::move(newInterval);
 }
 
 IntervalDomain& IntervalDomain::genImpl(const IntervalDomain &other, 
@@ -52,28 +53,9 @@ IntervalDomain& IntervalDomain::genImpl(const IntervalDomain &other,
     return *this = UNINIT();
   for (auto &interval : _intervals) {
     for (auto &otherInterval : other._intervals) {
-      interval = (interval.*op)(otherInterval);
+      (interval.*op)(otherInterval);
     }
   }
-  maintain();
-  return *this;
-}
-
-IntervalDomain& IntervalDomain::operator&=(const IntervalDomain& other) {
-  if (_unknown || other._unknown) {
-    return *this = UNINIT();
-  }
-  if (!overlaps(other)) {
-    return *this = EMPTY();
-  }
-
-  return *this;
-}
-IntervalDomain& IntervalDomain::operator|=(const IntervalDomain& other) {
-  if (_unknown || other._unknown) {
-    return *this = UNINIT();
-  }
-  _intervals.insert(_intervals.end(), other._intervals.begin(), other._intervals.end());
   maintain();
   return *this;
 }
