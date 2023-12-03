@@ -18,8 +18,8 @@ namespace dataflow {
 class Interval {
   int lo, hi;
 public:
-  static constexpr int INT_INF = std::numeric_limits<int>::max();
-  static constexpr int INT_NEG_INF = std::numeric_limits<int>::min();
+  static inline int INT_INF = std::numeric_limits<int>::max();
+  static inline int INT_NEG_INF = std::numeric_limits<int>::min();
 
   Interval(int lo, int hi) : lo(lo), hi(hi) {}
   Interval(int val) : lo(val), hi(val) {}
