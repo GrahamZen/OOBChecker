@@ -48,11 +48,7 @@ Interval& Interval::operator*=(const Interval &other) {
 }
 Interval& Interval::operator/=(const Interval &other) {
   if (other.contains(0)) {
-    auto div = [](int x, int y) {
-      if (y == 0) return INT_INF;
-      return x / y;
-    };
-    lo = std::min({div(lo, other.lo), div(lo, other.hi), div(hi, other.lo), div(hi, other.hi)});
+    lo = INT_NEG_INF;
     hi = INT_INF;
   } else {
     auto it = std::minmax({lo / other.lo, lo / other.hi, hi / other.lo, hi / other.hi});

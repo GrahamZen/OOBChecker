@@ -147,7 +147,7 @@ namespace dataflow
     const auto &inFacts = context.in.at(ins);
     if (isInput(ins))
     {
-      ret[variable(ins)] = IntervalDomain::UNINIT();
+      ret[variable(ins)] = IntervalDomain::INF_DOMAIN();
     }
     else if (auto phi = llvm::dyn_cast<llvm::PHINode>(ins))
     {
@@ -173,6 +173,10 @@ namespace dataflow
         llvm::ArrayType *arrayType = llvm::dyn_cast<llvm::ArrayType>(allocatedType);
         uint64_t arraySize = arrayType->getNumElements();
         context.arraySizeMap[alloca] = arraySize;
+      }
+      else if (allocatedType->isIntegerTy())
+      {
+        ret[variable(alloca)] = IntervalDomain::INF_DOMAIN();
       }
     }
     else if (auto GEPInst = llvm::dyn_cast<llvm::GetElementPtrInst>(ins))

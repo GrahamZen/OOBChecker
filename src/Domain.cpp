@@ -4,6 +4,11 @@
 
 #ifndef UNIT_TEST
 #include <llvm/IR/Constants.h>
+#include <llvm/IR/GlobalVariable.h>
+#include <llvm/IR/Argument.h>
+#include <llvm/IR/Instruction.h>
+#include <llvm/IR/Instructions.h>
+
 #endif
 
 //===----------------------------------------------------------------------===//
@@ -21,9 +26,47 @@ IntervalDomain::IntervalDomain(const llvm::Value *val) {
     auto sval = ci->getSExtValue();
     _intervals.emplace_back(sval, sval);
     _unknown = false;
-  } else if (val->getType()->isIntegerTy()) {
-    _intervals.emplace_back(Interval::INT_NEG_INF, Interval::INT_INF);
-    _unknown = false;
+  } else if (auto gv = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
+    // global variable
+    if (gv->hasInitializer()) {
+      auto init = gv->getInitializer();
+      if (auto ci = llvm::dyn_cast<llvm::ConstantInt>(init)) {
+        auto sval = ci->getSExtValue();
+        _intervals.emplace_back(sval, sval);
+        _unknown = false;
+      } else {
+        _unknown = true;
+      }
+    } else {
+      _unknown = true;
+    }
+  } else if (auto arg = llvm::dyn_cast<llvm::Argument>(val)) {
+    // function argument
+    if (arg->getType()->isIntegerTy()) {
+      _intervals.emplace_back(Interval::INT_NEG_INF, Interval::INT_INF);
+      _unknown = false;
+    } else {
+      _unknown = true;
+    }
+  } else if (auto inst = llvm::dyn_cast<llvm::Instruction>(val)) {
+    // local variable
+    if (auto alloca = llvm::dyn_cast<llvm::AllocaInst>(inst)) {
+      if (alloca->getAllocatedType()->isIntegerTy()) {
+        _intervals.emplace_back(Interval::INT_NEG_INF, Interval::INT_INF);
+        _unknown = false;
+      } else {
+        _unknown = true;
+      }
+    } else if (auto call = llvm::dyn_cast<llvm::CallInst>(inst)) {
+      if (call->getType()->isIntegerTy()) {
+        _intervals.emplace_back(Interval::INT_NEG_INF, Interval::INT_INF);
+        _unknown = false;
+      } else {
+        _unknown = true;
+      }
+    } else {
+      _unknown = true;
+    }
   } else {
     _unknown = true;
   }
