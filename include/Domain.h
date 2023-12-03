@@ -166,6 +166,14 @@ std::enable_if<
     StreamLike&
 >::type
 operator<<(StreamLike &os, const IntervalDomain& domain) {
+  if (domain.isUnknown()) {
+    os << "non-integral";
+    return os;
+  }
+  if (domain.isEmpty()) {
+    os << "empty";
+    return os;
+  }
   int i = 0;
   for (auto& interval : domain) {
     os << interval << ", "[i == domain.size() - 1];

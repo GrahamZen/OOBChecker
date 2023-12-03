@@ -21,6 +21,9 @@ IntervalDomain::IntervalDomain(const llvm::Value *val) {
     auto sval = ci->getSExtValue();
     _intervals.emplace_back(sval, sval);
     _unknown = false;
+  } else if (val->getType()->isIntegerTy()) {
+    _intervals.emplace_back(Interval::INT_NEG_INF, Interval::INT_INF);
+    _unknown = false;
   } else {
     _unknown = true;
   }
