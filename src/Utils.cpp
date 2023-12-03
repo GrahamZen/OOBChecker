@@ -51,7 +51,7 @@ void printInstructionTransfer(const llvm::Instruction *ins, const FactMap& inMap
                               const FactMap& outMap) {
   // print 2 maps side by side
   llvm::outs() << variable(ins) << "\n";
-  int inWidth = 0;
+  int inWidth = 5;
   std::vector<std::string> lines(std::max(inMap.size(), outMap.size()));
   int iLines = 0;
   for (auto &fact : inMap) {
