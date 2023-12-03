@@ -23,6 +23,8 @@ struct AnalysisContext {
   PointerAnalysis pa;
   std::unordered_set<const llvm::Value*> pointerSet;
   InsFactMap in, out;
+  // record array size for each array
+  std::unordered_map<const llvm::Value*, int> arraySizeMap;
   // TODO: add other context info here
 };
 
@@ -43,14 +45,14 @@ protected:
    * @param context Context information at this point of the analysis.
    * @return The updated facts.
    */
-  FactMap genSet(const llvm::Instruction *ins, const AnalysisContext& context);
+  FactMap genSet(const llvm::Instruction *ins, AnalysisContext& context);
   /**
    * Returns the newly generated facts based on the instruction type/parameters.
    * @param ins The instruction to be analyzed.
    * @param context Context information at this point of the analysis.
    * @return The keys that need to be removed
    */
-  std::unordered_set<std::string> killSet(const llvm::Instruction *ins, const AnalysisContext& context);
+  std::unordered_set<std::string> killSet(const llvm::Instruction *ins, AnalysisContext& context);
 
   /**
    * @brief This function implements the chaotic iteration algorithm using
