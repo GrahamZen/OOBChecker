@@ -25,8 +25,8 @@ bool OOBCheckerPass::runOnFunction(llvm::Function &func) {
   doAnalysis(func, context);
 
   // Check each instruction in function F for potential divide-by-zero error.
-  llvm::outs() << context.in << "\n";
-  llvm::outs() << context.out << "\n";
+  // llvm::outs() << context.in << "\n";
+  // llvm::outs() << context.out << "\n";
 
   for (auto iter = inst_begin(func), end = inst_end(func); iter != end; ++iter) {
     auto ins = &(*iter);
