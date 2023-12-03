@@ -159,6 +159,9 @@ namespace dataflow
     }
     else if (auto cast = llvm::dyn_cast<llvm::CastInst>(ins))
     {
+      llvm::Value *sourceOperand = cast->getOperand(0);
+      uint64_t arraySize = context.arraySizeMap[sourceOperand];
+      context.arraySizeMap[cast] = arraySize;
       ret[variable(cast)] = eval(cast, inFacts);
     }
     else if (auto cmp = llvm::dyn_cast<llvm::CmpInst>(ins))
@@ -183,13 +186,10 @@ namespace dataflow
     {
       llvm::Value *arrayBase = GEPInst->getOperand(0);
       uint64_t arraySize = context.arraySizeMap[arrayBase];
-      if (GEPInst->getNumOperands() > 3)
+      if (llvm::ConstantInt *CI = llvm::dyn_cast<llvm::ConstantInt>(GEPInst->getOperand(1)))
       {
-        if (llvm::ConstantInt *CI = llvm::dyn_cast<llvm::ConstantInt>(GEPInst->getOperand(2)))
-        {
-          int64_t offset = CI->getSExtValue();
-          context.arraySizeMap[GEPInst] = arraySize - offset;
-        }
+        int64_t offset = CI->getSExtValue();
+        context.arraySizeMap[GEPInst] = arraySize - offset;
       }
       else
       {
@@ -235,6 +235,18 @@ namespace dataflow
       {
         ret[variable(load)] = inFacts.getOrExtract(pointer);
       }
+      if (pointer->getType()->isPointerTy())
+      {
+        llvm::Type *elementType = pointer->getType()->getPointerElementType();
+        if (elementType->isPointerTy())
+        {
+          if (context.arraySizeMap.find(pointer) != context.arraySizeMap.end())
+          {
+            int arraySize = context.arraySizeMap[pointer];
+            context.arraySizeMap[load] = arraySize;
+          }
+        }
+      }
     }
     else if (auto branch = llvm::dyn_cast<llvm::BranchInst>(ins))
     {
@@ -242,7 +254,15 @@ namespace dataflow
     }
     else if (auto call = llvm::dyn_cast<llvm::CallInst>(ins))
     {
-      if (call->getType()->isIntegerTy())
+      if (call->getCalledFunction() && call->getCalledFunction()->getName() == "malloc")
+      {
+        if (llvm::ConstantInt *CI = llvm::dyn_cast<llvm::ConstantInt>(call->getArgOperand(0)))
+        {
+          uint64_t mallocSize = CI->getZExtValue();
+          context.arraySizeMap[call] = mallocSize / sizeof(int);
+        }
+      }
+      else if (call->getType()->isIntegerTy())
       {
         ret[variable(call)] = inFacts.getOrExtract(call);
       }

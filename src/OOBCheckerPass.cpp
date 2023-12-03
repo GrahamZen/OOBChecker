@@ -9,10 +9,11 @@ namespace dataflow
     if (auto *gep = llvm::dyn_cast<llvm::GetElementPtrInst>(ins))
     {
       const auto arrayPtr = gep->getPointerOperand();
-      auto *index = gep->idx_begin();
+      auto *index = gep->idx_begin() + 1;
       int arraySize = context.arraySizeMap.at(arrayPtr);
       if (auto *constIndex = llvm::dyn_cast<llvm::ConstantInt>(index))
       {
+        int val = constIndex->getSExtValue();
         if (constIndex->getSExtValue() < 0 || constIndex->getSExtValue() >= arraySize)
         {
           return true;
@@ -20,10 +21,25 @@ namespace dataflow
       }
       else
       {
-        auto accessIndex = context.in.at(ins).getOrExtract(gep->getOperand(1));
-        if (accessIndex.lower() < 0 || accessIndex.upper() >= arraySize)
+        llvm::Type *elementType = gep->getResultElementType();
+        int numOp = gep->getNumOperands();
+        if (gep->getNumOperands() == 3)
         {
-          return true;
+          llvm::Value *idxProm = *(gep->idx_begin() + 1);
+          auto accessIndex = context.in.at(ins).getOrExtract(idxProm);
+          if (accessIndex.lower() < 0 || accessIndex.upper() >= arraySize)
+          {
+            return true;
+          }
+        }
+        else if (gep->getNumOperands() == 2)
+        {
+          llvm::Value *idxProm = *(gep->idx_begin());
+          auto accessIndex = context.in.at(ins).getOrExtract(idxProm);
+          if (accessIndex.lower() < 0 || accessIndex.upper() >= arraySize)
+          {
+            return true;
+          }
         }
       }
     }
