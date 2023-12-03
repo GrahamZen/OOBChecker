@@ -86,30 +86,39 @@ namespace dataflow {
   IntervalDomain eval(const llvm::CmpInst *cmp, const FactMap &inMap) {
     auto left = inMap.getOrExtract(cmp->getOperand(0));
     auto right = inMap.getOrExtract(cmp->getOperand(1));
-
+    if(left.isUnknown() || right.isUnknown()) {
+      return IntervalDomain::UNINIT();
+    } 
     switch (cmp->getPredicate())
     {
     case llvm::CmpInst::FCMP_OEQ:
     case llvm::CmpInst::ICMP_EQ:
-      if(left.isUnknown()) {
-        return right;
-      } else if(right.isUnknown()) {
-        return left;
-      }
-      return left & right;
+      return (left & right).isEmpty() ? IntervalDomain(0) : IntervalDomain(0, 1);
     case llvm::CmpInst::FCMP_ONE:
-    case llvm::CmpInst::ICMP_NE:    
+    case llvm::CmpInst::ICMP_NE:
+      return (left & right).isEmpty() ? IntervalDomain(1) : IntervalDomain(0, 1);
     case llvm::CmpInst::ICMP_SLT:
-    case llvm::CmpInst::ICMP_SLE:
     case llvm::CmpInst::ICMP_ULT:
+      if (left.upper() < right.lower()) return IntervalDomain(1);
+      if (left.lower() >= right.upper()) return IntervalDomain(0);
+      return IntervalDomain(0, 1);
+    case llvm::CmpInst::ICMP_SLE:
     case llvm::CmpInst::ICMP_ULE:
-    case llvm::CmpInst::ICMP_SGE:
+      if (left.upper() <= right.lower()) return IntervalDomain(1);
+      if (left.lower() > right.upper()) return IntervalDomain(0);
+      return IntervalDomain(0, 1);
     case llvm::CmpInst::ICMP_SGT:
-    case llvm::CmpInst::ICMP_UGE:
     case llvm::CmpInst::ICMP_UGT:
-      //TODO: improve this
+      if (left.lower() > right.upper()) return IntervalDomain(1);
+      if (left.upper() <= right.lower()) return IntervalDomain(0);
+      return IntervalDomain(0, 1);
+    case llvm::CmpInst::ICMP_SGE:
+    case llvm::CmpInst::ICMP_UGE:
+      if (left.lower() >= right.upper()) return IntervalDomain(1);
+      if (left.upper() < right.lower()) return IntervalDomain(0);
+      return IntervalDomain(0, 1);
     default:
-      return left | right;
+      return IntervalDomain(0, 1);
     }
   }
 

@@ -102,6 +102,24 @@ public:
   IntervalDomain& operator/=(const IntervalDomain &other) {
     return genImpl(other, &Interval::operator/=);
   }
+
+  /**
+   * @brief get the complement of the domain.
+   * @return the complement of the domain.
+  */
+  IntervalDomain operator~() const;
+
+  /**
+   * @brief clamp the domain to a given range.
+   * @param lo the lower bound of the range.
+   * @param hi the upper bound of the range.
+  */
+  void clamp(int lo, int hi);
+
+  /**
+   * @brief check if two domains are equal.
+   * @param other the domain to be compared with.
+  */
   bool operator==(const IntervalDomain &other) const;
 
   IntervalDomain operator&(const IntervalDomain& other) const {
