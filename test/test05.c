@@ -1,8 +1,7 @@
 int f() {
-  int x = 0;
-  int y = 1;
-  if (x != 0) {
-    int z = y / x; // unreachable
+  int arr[10];
+  for (int i = 0; i <= 10; i++) {
+    arr[i] = i; // BOOM
   }
   return 0;
 }
