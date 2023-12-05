@@ -1,7 +1,11 @@
+#include <stdlib.h>
 #include <stdio.h>
 
 void f() {
-  int arr[] = {1, 2, 3};
-  int brr[2];
-  return (void)brr[arr[2]]; // out-of-bounds access
+  char* str = malloc(10 * sizeof(char));
+  int i = 0;
+  while(getchar() != '\n' && i < 10) {
+    *(str++) = 'a'; // ok
+    i++;
+  }
 }

@@ -1,7 +1,7 @@
+#include <stdlib.h>
+
 int f() {
-  int arr[10];
-  for (int i = 0; i <= 10; i++) {
-    arr[i] = i; // BOOM
-  }
+  int* arr = malloc(10 * sizeof(int));
+  arr[10] = 0; // out-of-bounds
   return 0;
 }

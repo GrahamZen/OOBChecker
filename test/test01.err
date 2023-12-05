@@ -1,16 +1,15 @@
 Pointer Analysis Results:
   %a      : { @(%a = alloca i32, align 4); }
-  %a1     : { @(%a1 = alloca i32, align 4); }
   %b      : { @(%b = alloca i32, align 4); }
   %c      : { @(%c = alloca i32, align 4); }
-  %d      : { @(%d = alloca i32, align 4); }
+  %e      : { @(%e = alloca [1 x i32], align 4); }
   %retval : { @(%retval = alloca i32, align 4); }
 
 Pointer Analysis Results:
   %a      : { @(%a = alloca i32, align 4); }
-  %a1     : { @(%a1 = alloca i32, align 4); }
   %b      : { @(%b = alloca i32, align 4); }
   %c      : { @(%c = alloca i32, align 4); }
-  %d      : { @(%d = alloca i32, align 4); }
+  %e      : { @(%e = alloca [1 x i32], align 4); }
   %retval : { @(%retval = alloca i32, align 4); }
 
+Potential array out of bounds error:   %arrayidx = getelementptr inbounds [1 x i32], [1 x i32]* %e, i64 0, i64 %idxprom

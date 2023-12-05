@@ -30,6 +30,7 @@ struct AnalysisContext {
 
 struct OOBCheckerPass : public llvm::FunctionPass {
   static char ID;
+  static inline int maxIterCnt = 1000;
   OOBCheckerPass() : llvm::FunctionPass(ID) {}
 
   /**

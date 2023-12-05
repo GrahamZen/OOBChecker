@@ -67,7 +67,8 @@ namespace dataflow {
             insQueue.push(ins);
             context.pointerSet.insert(ins);
         }
-        while (!insQueue.empty()) {
+
+        for (int i = 0; !insQueue.empty() && i < maxIterCnt; ++i) {
             auto ins = insQueue.front();
             insQueue.pop();
 

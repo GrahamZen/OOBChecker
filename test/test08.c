@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 void f() {
-  int a[2];
-  int* b = a + 3;
-  int** c = &b;
-  int*** d = &c;
-  ***d = 0; // out-of-bounds access
+  int n;
+  scanf("%d", &n);
+  int* arr = malloc(n * sizeof(int));
+  for (int i = 0; i < n; i++) {
+    arr[i] = i; // ok
+  }
+  free(arr);  
 }

@@ -85,9 +85,10 @@ opt -load ./OOBChecker.so -OOBChecker test.ll
 
 ---
 `test.err` will contain the following line, if everything works correctly.
-    ```
-    Potential array out of bounds error:   %arrayidx = getelementptr inbounds i32, i32* %0, i64 %idxprom
-    ```
+```
+Potential array out of bounds error:   %arrayidx = getelementptr inbounds i32, i32* %0, i64 %idxprom
+```
+
 - which is the IR instruction corresponding to the out-of-bounds access `b[c < d] = 0;`.
 ---
 `test.out` will show how the interval domain is updated at each program point.

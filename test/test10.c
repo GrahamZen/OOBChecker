@@ -5,6 +5,6 @@ void f() {
   int brr[] = {7, 2, 3};
   int crr[7];
   int* p = crr + arr[2];
-  int** q = &p + crr[brr[arr[2]]]; // out-of-bounds accesses
-  *q[2] = 6; // out-of-bounds access
+  int** q = &p + crr[brr[arr[2]]]; // out-of-bounds
+  *q[2] = 6; // out-of-bounds
 }
